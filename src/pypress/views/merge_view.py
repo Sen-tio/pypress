@@ -36,7 +36,10 @@ class MergeView:
             TimeRemainingColumn(),
             transient=True,
         )
-        self.task_id = self.progress.add_task(description=task_description, total=20000)
+        self.task_id = self.progress.add_task(description=task_description)
+
+    def set_progress_total_and_start(self, total: int) -> None:
+        self.progress.tasks[self.task_id].total = total
         self.progress.start()
 
     def process_message(

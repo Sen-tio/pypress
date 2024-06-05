@@ -8,7 +8,7 @@ from pdflib_extended.pdflib import PDFlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import multiprocessing
-
+from ..views.merge_view import MergeMessageType
 from pypress.models.merge.merge_model import MergeThread, MergeThreadException
 from pypress.views.merge_view import MergeView
 
@@ -40,7 +40,31 @@ class MergeController:
         )
 
     def _load_data(self) -> pl.DataFrame:
-        return pl.read_csv(self.options.input_path, infer_schema_length=0)
+        df = pl.read_csv(self.options.input_path, infer_schema_length=0)
+
+        # Get rows to be dropped and send warning to progress update
+        null_df: pl.DataFrame = df.with_row_count().filter(
+            pl.all_horizontal(pl.col(df.columns[1:]).is_null())
+        )
+
+        if not null_df.is_empty():
+            row_count = null_df.shape[0]
+            row_indices = ", ".join(
+                null_df.with_columns(
+                    pl.col(null_df.columns[0]).map(lambda x: x + 1).cast(pl.Utf8)
+                )
+                .to_series()
+                .to_list()
+            )
+            self.message_queue.put(
+                (
+                    MergeMessageType.PROGRESS_WARNING,
+                    f"Controller: Dropped {row_count} empty row(s): {row_indices}",
+                )
+            )
+
+        # Filter drops all rows that are completely empty
+        return df.filter(~pl.all_horizontal(pl.all().is_null()))
 
     def _set_template_path_column(self, df: pl.DataFrame) -> pl.DataFrame:
         if not self.options.variable_column:
@@ -141,6 +165,10 @@ class MergeController:
             ]
             for future in as_completed(futures):
                 future.result()
+
+        self.view.set_progress_total_and_start(
+            total=df["__pypress_template_page_count"].sum()
+        )
 
         while (
             any(thread.is_alive() for thread in self.threads)
