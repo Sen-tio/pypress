@@ -156,7 +156,7 @@ class MergeThread(threading.Thread):
 
 def replace_merge_fields(text: str, row: dict[str, Any]) -> str:
     try:
-        text: str = re.sub("«(.*?)»", lambda m: row[m.group(1)], text)
+        text: str = re.sub("«(.*?)»", lambda m: row[m.group(1).lower()], text)
         text = re.sub("(\\r\\n)+", "\r\n", text).strip()
     except KeyError as e:
         raise MergeFieldException(f"Column '{e.args[0]}' not found in data")

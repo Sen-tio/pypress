@@ -63,8 +63,10 @@ class MergeController:
                 )
             )
 
-        # Filter drops all rows that are completely empty
-        return df.filter(~pl.all_horizontal(pl.all().is_null()))
+        # Filter drops all rows that are completely empty and lowercase all columns
+        return df.filter(~pl.all_horizontal(pl.all().is_null())).with_columns(
+            pl.all().name.to_lowercase()
+        )
 
     def _set_template_path_column(self, df: pl.DataFrame) -> pl.DataFrame:
         if not self.options.variable_column:
