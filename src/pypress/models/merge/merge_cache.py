@@ -25,6 +25,7 @@ class Page:
     width: float
     height: float
     blocks: list[Block] = field(default_factory=list)
+    is_block_reference: bool = False
 
 
 @dataclass
@@ -63,6 +64,36 @@ class MergeCache:
         self._cached_images[image_path.as_posix()] = image_handle
         return image_handle
 
+    def get_or_cache_pdf_page(
+        self, file_path: Union[str, Path], page_number: int
+    ) -> Page:
+        doc: Document = None
+        file_path = Path(file_path)
+
+        if file_path.as_posix() in self._cached_documents.keys():
+            doc: Document = self._cached_documents[file_path.as_posix()]
+            for page in doc.pages:
+                if page.number == page_number:
+                    return page
+
+        if doc is None:
+            doc_handle: int = self.p.open_pdi_document(file_path.as_posix(), "")
+            if doc_handle < 0:
+                raise MergeCacheException(self.p.get_errmsg())
+            doc = Document(file_path.as_posix(), doc_handle)
+
+        page_handle: int = self.p.open_pdi_page(doc.handle, page_number, "")
+        if page_handle < 0:
+            raise MergeCacheException(self.p.get_errmsg())
+
+        pdf_block_page = Page(
+            page_handle, -1, page_number, 0, 0, is_block_reference=True
+        )
+        doc.pages.append(pdf_block_page)
+
+        self._cached_documents[file_path.as_posix()] = doc
+        return pdf_block_page
+
     def clear_cache(self) -> None:
         if not self._cached_documents:
             return
@@ -72,7 +103,8 @@ class MergeCache:
 
         for doc in self._cached_documents.values():
             for page in doc.pages:
-                self.p.close_image(page.image_handle)
+                if not page.is_block_reference:
+                    self.p.close_image(page.image_handle)
                 self.p.close_pdi_page(page.handle)
             self.p.close_pdi_document(doc.handle)
 

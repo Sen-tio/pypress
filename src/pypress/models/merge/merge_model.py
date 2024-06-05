@@ -134,8 +134,20 @@ class MergeThread(threading.Thread):
             raise MergeThreadException(self.p.get_errmsg())
 
     def merge_pdf_block(self, page: Page, block: Block, replaced_text: str) -> int:
-        # TODO
-        return 1
+        try:
+            pdf_block_page: Page = self.cache.get_or_cache_pdf_page(
+                replaced_text, block.page
+            )
+        except MergeCacheException as e:
+            self.message_queue.put(
+                (
+                    MergeMessageType.PROGRESS_WARNING,
+                    f"PDF could not be placed '{replaced_text}': {e}",
+                )
+            )
+            return 1
+
+        return self.p.fill_pdfblock(page.handle, block.name, pdf_block_page.handle, "")
 
     def merge_text_block(self, page: Page, block: Block, replaced_text: str) -> int:
         return self.p.fill_textblock(
