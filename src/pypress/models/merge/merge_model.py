@@ -17,6 +17,10 @@ class MergeThreadException(Exception):
     pass
 
 
+class MergeFieldException(Exception):
+    pass
+
+
 class MergeThread(threading.Thread):
     # TODO: graphics blocks and pdf blocks fill
     def __init__(
@@ -92,20 +96,29 @@ class MergeThread(threading.Thread):
             raise MergeThreadException(str(e))
 
         for page in doc.pages:
-            self.merge_page(page, row)
+            self.merge_page(doc, page, row)
 
-    def merge_page(self, page: Page, row: dict[str, Any]) -> None:
+    def merge_page(self, doc: Document, page: Page, row: dict[str, Any]) -> None:
         self.p.begin_page_ext(page.width, page.height, "")
         self.p.fit_image(page.image_handle, 0, 0, "fitmethod=meet")
         self.p.fit_pdi_page(page.handle, 0, 0, "blind")
 
         for block in page.blocks:
-            self.merge_block(page, block, row)
+            self.merge_block(doc, page, block, row)
 
         self.p.end_page_ext("")
 
-    def merge_block(self, page: Page, block: Block, row: dict[str, Any]) -> None:
-        replaced_text = replace_merge_fields(block.text, row)
+    def merge_block(
+        self, doc: Document, page: Page, block: Block, row: dict[str, Any]
+    ) -> None:
+        try:
+            replaced_text = replace_merge_fields(block.text, row)
+        except MergeFieldException as e:
+            self.throw_error()
+            raise MergeThreadException(
+                f"Block '{block.name}' on page {page.number} of document "
+                f"'{doc.name}' could not be filled, {e}"
+            )
 
         if block.type.lower() == "text":
             result: int = self.merge_text_block(page, block, replaced_text)
@@ -142,8 +155,11 @@ class MergeThread(threading.Thread):
 
 
 def replace_merge_fields(text: str, row: dict[str, Any]) -> str:
-    text: str = re.sub("«(.*?)»", lambda m: row[m.group(1)], text)
-    text = re.sub("(\\r\\n)+", "\r\n", text).strip()
+    try:
+        text: str = re.sub("«(.*?)»", lambda m: row[m.group(1)], text)
+        text = re.sub("(\\r\\n)+", "\r\n", text).strip()
+    except KeyError as e:
+        raise MergeFieldException(f"Column '{e.args[0]}' not found in data")
 
     if text == "":
         # Avoid empty block to force fill
