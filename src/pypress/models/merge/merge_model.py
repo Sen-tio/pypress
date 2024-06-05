@@ -124,12 +124,18 @@ class MergeThread(threading.Thread):
             result: int = self.merge_text_block(page, block, replaced_text)
         elif block.type.lower() == "image":
             result: int = self.merge_image_block(page, block, replaced_text)
+        elif block.type.lower() == "pdf":
+            result: int = self.merge_pdf_block(page, block, replaced_text)
         else:
             raise MergeThreadException(f"Unsupported block type: {block.type}")
 
         if result < 0:
             self.throw_error()
             raise MergeThreadException(self.p.get_errmsg())
+
+    def merge_pdf_block(self, page: Page, block: Block, replaced_text: str) -> int:
+        # TODO
+        return 1
 
     def merge_text_block(self, page: Page, block: Block, replaced_text: str) -> int:
         return self.p.fill_textblock(

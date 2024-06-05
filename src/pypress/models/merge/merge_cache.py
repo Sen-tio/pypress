@@ -14,6 +14,7 @@ class Block:
     name: str
     type: str
     text: str
+    page: int = None
 
 
 @dataclass
@@ -129,10 +130,22 @@ class MergeCache:
     def _load_block(self, doc: Document, page: Page, block_index: int) -> Block:
         block_path = f"pages[{page.number - 1}]/blocks[{block_index}]"
 
+        block_page = None
         block_name = self.p.pcos_get_string(doc.handle, f"{block_path}.key")
         block_type = self.p.pcos_get_string(doc.handle, f"{block_path}/Subtype")
         block_text = self.p.pcos_get_string(
             doc.handle, f"{block_path}/default{block_type.lower()}"
         )
 
-        return Block(block_name, block_type, block_text)
+        if block_type.lower() == "pdf":
+            if (
+                self.p.pcos_get_string(doc.handle, f"{block_path}.val[8].key")
+                == "defaultpdfpage"
+            ):
+                block_page = int(
+                    self.p.pcos_get_number(doc.handle, f"{block_path}.val[8]")
+                )
+            else:
+                block_page = 1
+
+        return Block(block_name, block_type, block_text, block_page)
