@@ -58,7 +58,7 @@ class MergeView:
         style = "[bright_black italic]"
 
         if level == MergeMessageType.PROGRESS_WARNING.value:
-            style = "[bright_yellow italic]"
+            style = "[yellow italic]"
         elif level == MergeMessageType.PROGRESS_ERROR.value:
             style = "[bright_red italic]"
 

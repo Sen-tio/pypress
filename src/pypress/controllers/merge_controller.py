@@ -12,6 +12,11 @@ import multiprocessing
 from pypress.models.merge.merge_model import MergeThread, MergeThreadException
 from pypress.views.merge_view import MergeView
 
+from ..config.config import load_config
+
+
+config = load_config()
+
 
 @dataclass
 class MergeOptions:
@@ -26,11 +31,13 @@ class MergeOptions:
 class MergeController:
     def __init__(self, options: MergeOptions) -> None:
         self.options = options
-        self.p = PDFlib(version=10)
         self.message_queue = queue.Queue()
         self.stop_event = threading.Event()
         self.threads: list[MergeThread] = []
         self.view = MergeView()
+        self.p = PDFlib(
+            license_key=config["license_key"], version=config["pdflib_version"]
+        )
 
     def _load_data(self) -> pl.DataFrame:
         return pl.read_csv(self.options.input_path, infer_schema_length=0)
@@ -43,11 +50,31 @@ class MergeController:
                 )
             )
 
-        # TODO: impl var template
+        template_path = Path(self.options.template_path)
+        if not template_path.is_dir():
+            template_path = template_path.parent
+
+        return df.with_columns(
+            pl.col(self.options.variable_column)
+            .map_elements(
+                lambda x: Path(
+                    template_path, x + ".pdf" if not x.lower().endswith(".pdf") else x
+                ).as_posix(),
+                return_dtype=pl.Utf8,
+            )
+            .alias("__pypress_template_path")
+        )
 
     def _set_template_page_count_column(self, df: pl.DataFrame) -> pl.DataFrame:
+        seen_documents_page_count: dict[str, int] = {}
+
         def get_document_page_count(file_path: str) -> int:
-            with self.p.open_document(file_path) as doc:
+            if file_path in seen_documents_page_count:
+                return seen_documents_page_count[file_path]
+
+            p = PDFlib(version=config["pdflib_version"])
+            with p.open_document(file_path) as doc:
+                seen_documents_page_count[file_path] = doc.page_count
                 return doc.page_count
 
         if not self.options.variable_column:
@@ -57,7 +84,11 @@ class MergeController:
                 )
             )
 
-        # TODO: impl var page count
+        return df.with_columns(
+            pl.col("__pypress_template_path")
+            .apply(get_document_page_count, return_dtype=pl.Int8)
+            .alias("__pypress_template_page_count")
+        )
 
     def _split_dataframe_by_pages(
         self,

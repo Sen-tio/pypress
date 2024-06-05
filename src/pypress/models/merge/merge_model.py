@@ -8,6 +8,9 @@ import polars as pl
 from .merge_cache import MergeCache, Document, Page, Block, MergeCacheException
 from pdflib_extended.pdflib import PDFlib
 from ...views.merge_view import MergeMessageType
+from ...config.config import load_config
+
+config = load_config()
 
 
 class MergeThreadException(Exception):
@@ -15,6 +18,7 @@ class MergeThreadException(Exception):
 
 
 class MergeThread(threading.Thread):
+    # TODO: graphics blocks and pdf blocks fill
     def __init__(
         self,
         thread_id: int,
@@ -29,7 +33,9 @@ class MergeThread(threading.Thread):
         self.stop_event = stop_event
         self.df = df
         self.output_path = output_path
-        self.p = PDFlib(version=10)
+        self.p = PDFlib(
+            license_key=config["license_key"], version=config["pdflib_version"]
+        )
         self.cache = MergeCache(self.p)
 
     def run(self) -> None:
@@ -66,6 +72,7 @@ class MergeThread(threading.Thread):
                 (MergeMessageType.PROGRESS_UPDATE, row["__pypress_template_page_count"])
             )
 
+        self.cache.clear_cache()
         self.p.end_document("")
 
         self.message_queue.put(
@@ -120,7 +127,12 @@ class MergeThread(threading.Thread):
         try:
             image_handle: int = self.cache.get_or_cache_image(replaced_text)
         except MergeCacheException:
-            # TODO: raise a warning that image could not be placed
+            self.message_queue.put(
+                (
+                    MergeMessageType.PROGRESS_WARNING,
+                    f"Image could not be placed: {replaced_text}",
+                )
+            )
             return 1
 
         return self.p.fill_imageblock(page.handle, block.name, image_handle, "")

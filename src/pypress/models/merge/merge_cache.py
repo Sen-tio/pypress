@@ -81,6 +81,7 @@ class MergeCache:
         image_handle: int = self.p.load_image("auto", file_path.as_posix(), "")
         if image_handle < 0:
             raise MergeCacheException(self.p.get_errmsg())
+        return image_handle
 
     def _load_document(self, file_path: Path) -> Document:
         doc_handle: int = self.p.open_pdi_document(file_path.as_posix(), "")
