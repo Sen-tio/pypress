@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import multiprocessing
 from ..views.merge_view import MergeMessageType
-from pypress.models.merge.merge_model import MergeThread, MergeThreadException
+from pypress.models.merge.merge_thread import MergeThread, MergeThreadException
 from pypress.views.merge_view import MergeView
 
 from ..config.config import load_config

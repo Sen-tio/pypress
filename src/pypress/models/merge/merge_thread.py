@@ -22,7 +22,6 @@ class MergeFieldException(Exception):
 
 
 class MergeThread(threading.Thread):
-    # TODO: graphics blocks and pdf blocks fill
     def __init__(
         self,
         thread_id: int,
