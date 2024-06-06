@@ -40,6 +40,7 @@ class MergeCache:
         self.p = p
         self._cached_documents: dict[str, Document] = {}
         self._cached_images: dict[str, int] = {}
+        self._cached_graphics: dict[str, int] = {}
 
     def get_or_cache_document(self, file_path: Union[str, Path]) -> Document:
         file_path = Path(file_path)
@@ -64,10 +65,23 @@ class MergeCache:
         self._cached_images[image_path.as_posix()] = image_handle
         return image_handle
 
+    def get_or_cache_graphics(self, file_path: Union[str, Path]) -> int:
+        graphics_path = Path(file_path)
+
+        if not graphics_path.exists():
+            raise MergeCacheException(f"Graphics does not exist: {file_path}")
+
+        if graphics_path.as_posix() in self._cached_graphics.keys():
+            return self._cached_graphics[graphics_path.as_posix()]
+
+        graphics_handle: int = self._load_graphics(graphics_path)
+        self._cached_graphics[graphics_path.as_posix()] = graphics_handle
+        return graphics_handle
+
     def get_or_cache_pdf_page(
         self, file_path: Union[str, Path], page_number: int
     ) -> Page:
-        doc: Document = None
+        doc = None
         file_path = Path(file_path)
 
         if file_path.as_posix() in self._cached_documents.keys():
@@ -109,6 +123,12 @@ class MergeCache:
             self.p.close_pdi_document(doc.handle)
 
         self._cached_documents.clear()
+
+    def _load_graphics(self, file_path: Path) -> int:
+        graphics_handle: int = self.p.load_graphics("auto", file_path.as_posix(), "")
+        if graphics_handle < 0:
+            raise MergeCacheException(self.p.get_errmsg())
+        return graphics_handle
 
     def _load_image(self, file_path: Path) -> int:
         image_handle: int = self.p.load_image("auto", file_path.as_posix(), "")

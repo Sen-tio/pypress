@@ -126,12 +126,28 @@ class MergeThread(threading.Thread):
             result: int = self.merge_image_block(page, block, replaced_text)
         elif block.type.lower() == "pdf":
             result: int = self.merge_pdf_block(page, block, replaced_text)
+        elif block.type.lower() == "graphics":
+            result: int = self.merge_graphics_block(page, block, replaced_text)
         else:
             raise MergeThreadException(f"Unsupported block type: {block.type}")
 
         if result < 0:
             self.throw_error()
             raise MergeThreadException(self.p.get_errmsg())
+
+    def merge_graphics_block(self, page: Page, block: Block, replaced_text: str) -> int:
+        try:
+            graphics_handle: int = self.cache.get_or_cache_graphics(replaced_text)
+        except MergeCacheException:
+            self.message_queue.put(
+                (
+                    MergeMessageType.PROGRESS_WARNING,
+                    f"Image could not be placed: {replaced_text}",
+                )
+            )
+            return 1
+
+        return self.p.fill_graphicsblock(page.handle, block.name, graphics_handle, "")
 
     def merge_pdf_block(self, page: Page, block: Block, replaced_text: str) -> int:
         try:
