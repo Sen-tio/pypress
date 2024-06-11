@@ -11,9 +11,9 @@ def merge(
     ],
     output_path: Annotated[Path, typer.Argument(show_default=False)],
     template_path: Annotated[Path, typer.Argument(exists=True, show_default=False)],
-    variable_column: Annotated[str, typer.Option()] = None,
-    file_page_limit: Annotated[int, typer.Option()] = 10000,
-    generate_proof: Annotated[bool, typer.Option()] = False,
+    variable_column: Annotated[str, typer.Option("--variable-column", "-v")] = None,
+    file_page_limit: Annotated[int, typer.Option("--file-page-limit", "-l")] = 10000,
+    generate_proof: Annotated[bool, typer.Option("--generate-proof", "-p")] = False,
 ) -> None:
     merge_options = MergeOptions(
         input_path,

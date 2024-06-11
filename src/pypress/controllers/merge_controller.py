@@ -8,10 +8,10 @@ from pdflib_extended.pdflib import PDFlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import multiprocessing
-from ..views.merge_view import MergeMessageType
-from pypress.models.merge.merge_thread import MergeThread, MergeThreadException
-from pypress.views.merge_view import MergeView
 
+from ..views.merge_view import MergeMessageType
+from ..models.merge.merge_thread import MergeThread, MergeThreadException
+from ..views.merge_view import MergeView
 from ..config.config import load_config
 
 
@@ -63,10 +63,21 @@ class MergeController:
                 )
             )
 
-        # Filter drops all rows that are completely empty and lowercase all columns
-        return df.filter(~pl.all_horizontal(pl.all().is_null())).with_columns(
-            pl.all().name.to_lowercase()
-        )
+        df = df.filter(~pl.all_horizontal(pl.all().is_null()))  # Drop empty rows
+
+        if self.options.generate_proof:
+            if self.options.variable_column:
+                # Sample each group
+                df = df.filter(
+                    pl.int_range(pl.len()).shuffle().over(self.options.variable_column)
+                    < 3
+                ).sort(by=self.options.variable_column)
+            else:
+                # Sample entire dataframe
+                df = df.sample(3, shuffle=True)
+
+        # Return with lowercase all columns
+        return df.with_columns(pl.all().name.to_lowercase())
 
     def _set_template_path_column(self, df: pl.DataFrame) -> pl.DataFrame:
         if not self.options.variable_column:
