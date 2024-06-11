@@ -11,7 +11,7 @@ import threading
 import multiprocessing
 
 from ..views.merge_view import MergeMessageType
-from ..models.merge.merge_thread import MergeThread, MergeThreadException
+from ..models.merge.merge_thread import MergeThread
 from ..views.merge_view import MergeView
 from ..config.config import load_config
 
@@ -173,7 +173,7 @@ class MergeController:
 
         return chunks
 
-    def _start_merge_thread(self, thread_id: int, df: pl.DataFrame) -> pl.DataFrame:
+    def _start_merge_thread(self, thread_id: int, df: pl.DataFrame) -> None:
         output_path = (
             self.options.output_path.parent
             / f"{self.options.output_path.stem}_{thread_id + 1}.pdf"
