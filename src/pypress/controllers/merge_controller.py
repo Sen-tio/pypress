@@ -5,6 +5,7 @@ from typing import Union
 import polars as pl
 from dataclasses import dataclass
 from pdflib_extended.pdflib import PDFlib
+from pdflib_extended.exceptions import InvalidDocumentHandle
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import multiprocessing
@@ -16,6 +17,10 @@ from ..config.config import load_config
 
 
 config = load_config()
+
+
+class TemplateNotFound(Exception):
+    pass
 
 
 @dataclass
@@ -110,9 +115,12 @@ class MergeController:
                 return seen_documents_page_count[file_path]
 
             p = PDFlib(version=config["pdflib_version"])
-            with p.open_document(file_path) as doc:
-                seen_documents_page_count[file_path] = doc.page_count
-                return doc.page_count
+            try:
+                with p.open_document(file_path) as doc:
+                    seen_documents_page_count[file_path] = doc.page_count
+                    return doc.page_count
+            except InvalidDocumentHandle:
+                return -1
 
         if not self.options.variable_column:
             return df.with_columns(
@@ -121,11 +129,25 @@ class MergeController:
                 )
             )
 
-        return df.with_columns(
+        df = df.with_columns(
             pl.col("__pypress_template_path")
             .apply(get_document_page_count, return_dtype=pl.Int8)
             .alias("__pypress_template_page_count")
         )
+
+        bad_rows = df.filter(pl.col("__pypress_template_page_count") < 0)
+        if not bad_rows.is_empty():
+            self.view.console.print(
+                "[bold red]The following templates were referenced in the data but "
+                "could not be found:\n",
+                bad_rows.select("__pypress_template_path")
+                .unique()
+                .to_series()
+                .to_list(),
+            )
+            raise TemplateNotFound(bad_rows)
+
+        return df
 
     def _split_dataframe_by_pages(
         self,
@@ -168,7 +190,13 @@ class MergeController:
 
         df: pl.DataFrame = self._load_data()
         df = self._set_template_path_column(df)
-        df = self._set_template_page_count_column(df)
+
+        try:
+            df = self._set_template_page_count_column(df)
+        except TemplateNotFound:
+            self.view.display_result_error()
+            return
+
         df_chunks: list[pl.DataFrame] = self._split_dataframe_by_pages(df)
 
         with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
