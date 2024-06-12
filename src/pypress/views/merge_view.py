@@ -1,6 +1,8 @@
 from typing import Union
 
+from rich import box
 from rich.panel import Panel
+from rich.text import Text
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -23,7 +25,7 @@ class MergeMessageType(Enum):
 
 class MergeView:
     def __init__(self, task_description: str = "Merging") -> None:
-        self.console = Console()
+        self.console = Console(log_path=False)
         self.progress = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -35,8 +37,10 @@ class MergeView:
             TextColumn("•"),
             TimeRemainingColumn(),
             transient=True,
+            console=self.console,
         )
         self.task_id = self.progress.add_task(description=task_description)
+        self.display_start()
 
     def set_progress_total_and_start(self, total: int) -> None:
         self.progress.tasks[self.task_id].total = total
@@ -65,7 +69,13 @@ class MergeView:
         elif level == MergeMessageType.PROGRESS_ERROR.value:
             style = "[bright_red italic]"
 
-        self.progress.console.print(f"{style}{message}")
+        self.progress.console.log(f"{style}{message}")
+
+    def display_start(self) -> None:
+        title = Text("PyPress", style="magenta bold")
+        caption = Text("Merge", style="bright_black italic")
+
+        self.console.print(title, caption, "\n")
 
     def display_result_cancelled(self) -> None:
         self.console.print("\n\n[yellow bold]Merge cancelled! 🚫")
@@ -76,4 +86,8 @@ class MergeView:
 
     def display_result_success(self):
         self.progress.stop()
-        self.console.print(f"\n[green bold]Merge success! 🚀\n")
+
+        self.console.print(
+            f"\n[green bold]Merge completed in "
+            f"{self.progress.tasks[self.task_id].elapsed:.2f}s! 🚀\n"
+        )
