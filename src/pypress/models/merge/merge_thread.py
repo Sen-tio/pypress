@@ -1,14 +1,15 @@
-import threading
 import queue
 import re
+import threading
 from pathlib import Path
 from typing import Any
 
 import polars as pl
-from .merge_cache import MergeCache, Document, Page, Block, MergeCacheException
 from pdflib_extended.pdflib import PDFlib
-from ...views.merge_view import MergeMessageType
+
+from .merge_cache import MergeCache, Document, Page, Block, MergeCacheException
 from ...config.config import load_config
+from ...views.merge_view import MergeMessageType
 
 config = load_config()
 

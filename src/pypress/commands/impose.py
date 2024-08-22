@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Union
 
 import typer
 from typing_extensions import Annotated
+
 from ..controllers.imposition_controller import ImpositionController
 from ..models.imposition_thread import ImpositionThreadOptions
 

@@ -2,10 +2,10 @@ import multiprocessing
 import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 from ..models.imposition_thread import ImpositionThread, ImpositionThreadOptions
 from ..views.imposition_view import ImpositionView
-from pathlib import Path
 
 
 class ImpositionController:

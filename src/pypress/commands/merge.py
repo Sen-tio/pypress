@@ -2,6 +2,7 @@ from pathlib import Path
 
 import typer
 from typing_extensions import Annotated
+
 from ..controllers.merge_controller import MergeController, MergeOptions
 
 

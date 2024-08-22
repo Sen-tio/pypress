@@ -1,2 +1,3 @@
 /.idea
 /src/pypress/config/config.json
+*.pyc

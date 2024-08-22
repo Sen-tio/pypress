@@ -1,8 +1,6 @@
+from enum import Enum
 from typing import Union
 
-from rich import box
-from rich.panel import Panel
-from rich.text import Text
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -13,7 +11,7 @@ from rich.progress import (
     TimeRemainingColumn,
     SpinnerColumn,
 )
-from enum import Enum
+from rich.text import Text
 
 
 class MergeMessageType(Enum):

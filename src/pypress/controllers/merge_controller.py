@@ -1,20 +1,19 @@
+import multiprocessing
 import queue
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Union
 
 import polars as pl
-from dataclasses import dataclass
-from pdflib_extended.pdflib import PDFlib
 from pdflib_extended.exceptions import InvalidDocumentHandle
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
-import multiprocessing
+from pdflib_extended.pdflib import PDFlib
 
-from ..views.merge_view import MergeMessageType
-from ..models.merge.merge_thread import MergeThread
-from ..views.merge_view import MergeView
 from ..config.config import load_config
-
+from ..models.merge.merge_thread import MergeThread
+from ..views.merge_view import MergeMessageType
+from ..views.merge_view import MergeView
 
 config = load_config()
 

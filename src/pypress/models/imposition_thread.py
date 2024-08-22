@@ -1,12 +1,13 @@
 import math
 import queue
 import threading
-from pathlib import Path
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from pdflib_extended.pdflib import PDFlib
-from ..views.imposition_view import MessageType
+
 from ..config.config import load_config
+from ..views.imposition_view import MessageType
 
 config = load_config()
 
