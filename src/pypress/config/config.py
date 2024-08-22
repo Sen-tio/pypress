@@ -4,7 +4,7 @@ from typing import Any
 
 CONFIG_FILE = Path(__file__).parent / "config.json"
 
-default_config: dict[str, Any] = {"api_key": None}
+default_config: dict[str, Any] = {"license_key": None, "pdflib_version": 9}
 
 
 def load_config() -> dict[str, Any]:
