@@ -21,7 +21,7 @@ def config(
     if key not in config.keys():
         console.print(
             f"{key} is not a valid configuration option, "
-            f"type printsyn config to see a list of available options",
+            f"type pypress config to see a list of available options",
             style="bold red",
         )
         return
