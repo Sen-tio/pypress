@@ -30,6 +30,7 @@ class MergeThread(threading.Thread):
         stop_event: threading.Event,
         df: pl.DataFrame,
         output_path: Path,
+        omr_level: int,
     ) -> None:
         threading.Thread.__init__(self)
         self.thread_id = thread_id
@@ -37,6 +38,7 @@ class MergeThread(threading.Thread):
         self.stop_event = stop_event
         self.df = df
         self.output_path = output_path
+        self.omr_level = omr_level
         self.p = PDFlib(
             license_key=config["license_key"], version=config["pdflib_version"]
         )
@@ -105,6 +107,8 @@ class MergeThread(threading.Thread):
 
         for block in page.blocks:
             self.merge_block(doc, page, block, row)
+
+        self._check_and_draw_omr(doc, page)
 
         self.p.end_page_ext("")
 
@@ -183,6 +187,15 @@ class MergeThread(threading.Thread):
             return 1
 
         return self.p.fill_imageblock(page.handle, block.name, image_handle, "")
+
+    def _check_and_draw_omr(self, doc: Document, page: Page) -> None:
+        if not self.omr_level:
+            return
+
+        if page.number == len(doc.pages) - (self.omr_level - 1):
+            self.p.fit_omr(eoc=True)
+        elif (page.number - 1) % self.omr_level == 0:
+            self.p.fit_omr()
 
     def throw_error(self) -> None:
         self.stop_event.set()

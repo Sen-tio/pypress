@@ -30,6 +30,7 @@ class MergeOptions:
     variable_column: str = None
     file_page_limit: int = 10000
     generate_proof: bool = False
+    draw_omr: int = 0
 
 
 class MergeController:
@@ -178,7 +179,12 @@ class MergeController:
             / f"{self.options.output_path.stem}_{thread_id + 1}.pdf"
         )
         thread = MergeThread(
-            thread_id, self.message_queue, self.stop_event, df, output_path
+            thread_id,
+            self.message_queue,
+            self.stop_event,
+            df,
+            output_path,
+            self.options.draw_omr,
         )
 
         thread.start()
