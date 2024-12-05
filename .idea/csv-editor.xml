@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\tests\MOCK_DATA_DM.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

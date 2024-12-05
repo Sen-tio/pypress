@@ -15,6 +15,7 @@ class Block:
     type: str
     text: str
     page: int = None
+    custom_properties: dict[str, Union[str, int, float]] = None
 
 
 @dataclass
@@ -200,4 +201,15 @@ class MergeCache:
             else:
                 block_page = 1
 
-        return Block(block_name, block_type, block_text, block_page)
+        # Get any custom properties associated with the block
+        custom_properties: dict[str, Union[str, int, float]] = {}
+        custom_property_count = int(
+            self.p.pcos_get_number(doc.handle, f"length:{block_path}/Custom")
+        )
+
+        for i in range(custom_property_count):
+            key = self.p.pcos_get_string(doc.handle, f"{block_path}/Custom[{i}].key")
+            val = self.p.pcos_get_string(doc.handle, f"{block_path}/Custom[{i}].val")
+            custom_properties[key] = val
+
+        return Block(block_name, block_type, block_text, block_page, custom_properties)
