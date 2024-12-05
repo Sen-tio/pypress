@@ -14,7 +14,8 @@ class Barcode(ABC):
         self.handle = None
 
     def __enter__(self) -> int:
-        self.handle: int = self.create_image()
+        buffer: BytesIO = self.create_image()
+        self.handle: int = self.load_handle_from_buffer(buffer)
         return self.handle
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -25,7 +26,6 @@ class Barcode(ABC):
         if not int(self.p.info_pvf(pvf_path, "exists")):
             self.p.create_pvf(pvf_path, buffer.getvalue(), "")
 
-        # Load image from memory and place on page
         p_image: int = self.p.load_image("png", pvf_path, "")
         if p_image < 0:
             print(self.p.get_errmsg())
@@ -34,12 +34,12 @@ class Barcode(ABC):
         return p_image
 
     @abstractmethod
-    def create_image(self) -> int:
+    def create_image(self) -> BytesIO:
         pass
 
 
 class Datamatrix(Barcode):
-    def create_image(self) -> int:
+    def create_image(self) -> BytesIO:
         data_bytes: bytes = self.data.encode()
         encoded_data: Encoded = encode(data_bytes)
 
@@ -50,11 +50,11 @@ class Datamatrix(Barcode):
         buffer = BytesIO()
         image.save(buffer, format="PNG")
 
-        return self.load_handle_from_buffer(buffer)
+        return buffer
 
 
 class QRCode(Barcode):
-    def create_image(self) -> int:
+    def create_image(self) -> BytesIO:
         qr = qrcode.main.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -70,4 +70,4 @@ class QRCode(Barcode):
         buffer = BytesIO()
         image.save(buffer, kind="PNG")
 
-        return self.load_handle_from_buffer(buffer)
+        return buffer
