@@ -57,7 +57,7 @@ class MergeThread(threading.Thread):
 
     def merge_loop(self) -> None:
         self.df = self.df.with_columns(
-            pl.col("__pypress_template_page_count").cast(pl.Int8)
+            pl.col("__pypress_template_page_count").cast(pl.Int16)
         )
 
         res: int = self.p.begin_document(self.output_path.as_posix(), "optimize=true")
