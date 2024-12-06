@@ -1,7 +1,7 @@
-import qrcode
 from abc import ABC, abstractmethod
 from io import BytesIO
 
+import qrcode
 from PIL import Image
 from pdflib_extended.pdflib import PDFlib
 from pylibdmtx.pylibdmtx import Encoded, encode
@@ -14,14 +14,18 @@ class Barcode(ABC):
         self.handle = None
 
     def __enter__(self) -> int:
-        buffer: BytesIO = self.create_image()
-        self.handle: int = self.load_handle_from_buffer(buffer)
+        self.handle: int = self.create_handle()
         return self.handle
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.p.close_image(self.handle)
 
-    def load_handle_from_buffer(self, buffer: BytesIO) -> int:
+    def create_handle(self) -> int:
+        buffer = BytesIO()
+
+        image: Image = self.create_image()
+        image.save(buffer, kind="PNG")
+
         pvf_path = f"/pvf/{self.data}"
         if not int(self.p.info_pvf(pvf_path, "exists")):
             self.p.create_pvf(pvf_path, buffer.getvalue(), "")
@@ -34,12 +38,12 @@ class Barcode(ABC):
         return p_image
 
     @abstractmethod
-    def create_image(self) -> BytesIO:
+    def create_image(self) -> Image:
         pass
 
 
 class Datamatrix(Barcode):
-    def create_image(self) -> BytesIO:
+    def create_image(self) -> Image:
         data_bytes: bytes = self.data.encode()
         encoded_data: Encoded = encode(data_bytes)
 
@@ -47,14 +51,11 @@ class Datamatrix(Barcode):
             "RGB", (encoded_data.width, encoded_data.height), encoded_data.pixels
         )
 
-        buffer = BytesIO()
-        image.save(buffer, format="PNG")
-
-        return buffer
+        return image
 
 
 class QRCode(Barcode):
-    def create_image(self) -> BytesIO:
+    def create_image(self) -> Image:
         qr = qrcode.main.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -67,7 +68,19 @@ class QRCode(Barcode):
 
         image = qr.make_image(fill_color="black", back_color="white")
 
-        buffer = BytesIO()
-        image.save(buffer, kind="PNG")
+        return image
 
-        return buffer
+
+class BarcodeFactory:
+    def __init__(self, p: PDFlib):
+        self.p = p
+
+    def create_barcode(self, data: str, barcode_type: str) -> Barcode:
+        barcode_type: str = barcode_type.casefold()
+
+        if barcode_type == "datamatrix":
+            return Datamatrix(self.p, data)
+        elif barcode_type == "qr_code":
+            return QRCode(self.p, data)
+        else:
+            raise ValueError(f"Unsupported barcode type: {barcode_type}")

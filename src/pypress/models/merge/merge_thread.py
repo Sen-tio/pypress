@@ -8,7 +8,7 @@ from typing import Any
 import polars as pl
 from pdflib_extended.pdflib import PDFlib
 
-from .barcodes import QRCode, Datamatrix
+from .barcodes import BarcodeFactory
 from .merge_cache import MergeCache, Document, Page, Block, MergeCacheException
 from ...config.config import load_config
 from ...views.merge_view import MergeMessageType
@@ -44,7 +44,9 @@ class MergeThread(threading.Thread):
         self.p = PDFlib(
             license_key=config["license_key"], version=config["pdflib_version"]
         )
+
         self.cache = MergeCache(self.p)
+        self.barcode_factory = BarcodeFactory(self.p)
 
     def run(self) -> None:
         try:
@@ -179,18 +181,9 @@ class MergeThread(threading.Thread):
     def merge_image_block(self, page: Page, block: Block, replaced_text: str) -> int:
         # Check to see if the image block was set with barcode properties
         if "barcode" in block.custom_properties.keys():
-            if block.custom_properties["barcode"].casefold() == "datamatrix":
-                # Fill graphics block with a datamatrix
-                with Datamatrix(self.p, replaced_text) as image_handle:
-                    return self.p.fill_imageblock(
-                        page.handle, block.name, image_handle, ""
-                    )
-            elif block.custom_properties["barcode"].casefold() == "qr_code":
-                # Fill graphics block with a qr code
-                with QRCode(self.p, replaced_text) as image_handle:
-                    return self.p.fill_imageblock(
-                        page.handle, block.name, image_handle, ""
-                    )
+            barcode_type = block.custom_properties["barcode"]
+            with self.barcode_factory.create_barcode(replaced_text, barcode_type) as bc:
+                return self.p.fill_imageblock(page.handle, block.name, bc, "")
 
         # Fill the image block the standard way
         try:
