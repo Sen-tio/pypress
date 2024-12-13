@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
+import barcode
 
 import qrcode
 from PIL import Image
@@ -24,7 +25,7 @@ class Barcode(ABC):
         buffer = BytesIO()
 
         image: Image = self.create_image()
-        image.save(buffer, kind="PNG")
+        image.save(buffer, format="PNG")
 
         pvf_path = f"/pvf/{self.data}"
         if not int(self.p.info_pvf(pvf_path, "exists")):
@@ -71,6 +72,12 @@ class QRCode(Barcode):
         return image
 
 
+class Code128(Barcode):
+    def create_image(self) -> Image:
+        code128 = barcode.get("code128", self.data, writer=barcode.writer.ImageWriter())
+        return code128.render()
+
+
 class BarcodeFactory:
     def __init__(self, p: PDFlib):
         self.p = p
@@ -82,5 +89,7 @@ class BarcodeFactory:
             return Datamatrix(self.p, data)
         elif barcode_type == "qr_code":
             return QRCode(self.p, data)
+        elif barcode_type == "code128":
+            return Code128(self.p, data)
         else:
             raise ValueError(f"Unsupported barcode type: {barcode_type}")

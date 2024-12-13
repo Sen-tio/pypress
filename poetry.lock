@@ -399,6 +399,20 @@ tomli = {version = ">=1", markers = "python_version < \"3.11\""}
 dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
+name = "python-barcode"
+version = "0.15.1"
+description = "Create standard barcodes with Python. No external modules needed. (optional Pillow support included)."
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-barcode-0.15.1.tar.gz", hash = "sha256:3b1825fbdb11e597466dff4286b4ea9b1e86a57717b59e563ae679726fc854de"},
+    {file = "python_barcode-0.15.1-py3-none-any.whl", hash = "sha256:057636fba37369c22852410c8535b36adfbeb965ddfd4e5b6924455d692e0886"},
+]
+
+[package.extras]
+images = ["pillow"]
+
+[[package]]
 name = "pywin32"
 version = "308"
 description = "Python for Window Extensions"
@@ -561,4 +575,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "894315e739115097e9f9a4f93ff85eedd22d931f2c912fdde1989fe2688b36dc"
+content-hash = "b02d10f94b687fdbfec4312b5f688ee8bed781f2b49734ae0b09f6e3adecc58f"

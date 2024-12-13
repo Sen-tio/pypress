@@ -16,6 +16,7 @@ setuptools = "^70.0.0"
 pdflib-extended = "^2024.6.4"
 polars = "^0.20.31"
 qrcode = "^8.0"
+python-barcode = "^0.15.1"
 
 [tool.poetry.dev-dependencies]
 black = "^24.4.2"
