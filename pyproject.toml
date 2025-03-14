@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pypress"
-version = "0.2.1"
+version = "0.2.2"
 description = ""
 authors = ["Richard <smithr.programming@gmail.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ python = "^3.9"
 rich = "^13.7.1"
 typer = "^0.12.3"
 setuptools = "^70.0.0"
-pdflib-extended = "^2024.6.4"
+pdflib-extended = ">=2024.9.10"
 polars = "^0.20.31"
 qrcode = "^8.0"
 python-barcode = "^0.15.1"
