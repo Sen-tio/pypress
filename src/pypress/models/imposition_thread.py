@@ -143,18 +143,3 @@ class ImpositionThread(threading.Thread):
         pass
 
 
-if __name__ == "__main__":
-    options = ImpositionThreadOptions(
-        rows=2, columns=2, sheet_size=(13.0, 9.0), duplex=True
-    )
-
-    thread = ImpositionThread(
-        thread_id=1,
-        message_queue=queue.Queue(),
-        stop_event=threading.Event(),
-        input_path=Path(r"Y:\Archway\948876\948876_PRINT_1.pdf"),
-        output_path=Path(r"Y:\Archway\948876\948876_PRINT_1_4up.pdf"),
-        options=options,
-    )
-
-    thread.start()
